@@ -24,6 +24,13 @@ def parse_args():
         default=1,
         type=int,
     )
+    parser.add_argument(
+        "--tol",
+        dest="tol",
+        help="difference tolerance",
+        default=0.2,
+        type=float,
+    )
 
     args = parser.parse_args()
     return args
@@ -68,39 +75,46 @@ if abs(fulldata[0][0]) == 0.15:
     del fulldata[0]
 
 avg_base = np.zeros(15)
-for x in fulldata:
+for i in range(len(fulldata) - 1, -1, -1):
+    x = fulldata[i]
     assert len(x) == 20
     x = np.array(x)
-    for i in range(20, 0, -4):
-        x = np.delete(x, i - 1)
+    for j in range(20, 0, -4):
+        x = np.delete(x, j - 1)
     assert len(x) == 15
+    fulldata[i] = x
     avg_base = avg_base + x
 
 avg_base = [x / len(fulldata) for x in avg_base]
 print(f"avg base num: {avg_base}")
 
-avg_base = np.array[
-    -35.2282729805014,
-    -101.85376044568241,
-    -530.0596378830087,
-    -308.9774373259055,
-    284.7739554317551,
-    -1091.5754596100278,
-    -21.344707520891355,
-    -137.83245125348193,
-    -864.9162674094721,
-    -202.3215877437327,
-    -163.25055710306415,
-    -666.7459052924787,
-    -110.93732590529252,
-    -77.79108635097492,
-    -364.8731754874653,
-]
-for i, x in enumerate(fulldata):
+avg_base = np.array(
+    [
+        -35.2282729805014,
+        -101.85376044568241,
+        -530.0596378830087,
+        -308.9774373259055,
+        284.7739554317551,
+        -1091.5754596100278,
+        -21.344707520891355,
+        -137.83245125348193,
+        -864.9162674094721,
+        -202.3215877437327,
+        -163.25055710306415,
+        -666.7459052924787,
+        -110.93732590529252,
+        -77.79108635097492,
+        -364.8731754874653,
+    ]
+)
+breakpoint()
+for i in range(len(fulldata)):
+    x = fulldata[i]
     diff = x - avg_base
-    for y in diff:
-        if y > (args.tol) * avg_base:
-            print(i, x)
+    for j in range(len(diff)):
+        if abs(diff[j]) > abs(args.tol * avg_base[j]):
+            print(f"{i}, {abs(diff[j])}, {abs(args.tol * avg_base[j])}")
+            continue
 
 breakpoint()
 infodict = {
