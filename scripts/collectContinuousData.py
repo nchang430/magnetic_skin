@@ -98,29 +98,39 @@ def main():
     # remove init data
     if abs(fulldata[0][0]) == 0.15:
         del fulldata[0]
+    for i in range(len(fulldata) - 1, -1, -1):
+        x = fulldata[i]
+        assert len(x) == 20
+        x = np.array(x)
+        for j in range(20, 0, -4):
+            x = np.delete(x, j - 1)
+        assert len(x) == 15
+        fulldata[i] = x
 
     if args.type == "base":
         # remove temp, avg data, check size
         avg_base = np.zeros(15)
-        for i in range(len(fulldata) - 1, -1, -1):
-            x = fulldata[i]
-            assert len(x) == 20
-            x = np.array(x)
-            for j in range(20, 0, -4):
-                x = np.delete(x, j - 1)
-            assert len(x) == 15
-            fulldata[i] = x
+        for x in fulldata:
             avg_base = avg_base + x
         avg_base = [x / len(fulldata) for x in avg_base]
         print(f"avg base num: {avg_base}")
     else:
         avg_base = np.zeros(15)
         dataroot = path.Path(args.dataroot)
-        base_pkls = dataroot.glob("base*")
+        base_pkls = list(dataroot.glob("base*"))
         for pkl in base_pkls:
             cur_dict = pickle.load(pkl.open("rb"))
             avg_base = avg_base + np.array(cur_dict["avg_base"])
         avg_base = avg_base / len(base_pkls)
+
+    # checking for signal away from baseline
+    for i in range(len(fulldata)):
+        x = fulldata[i]
+        diff = x - avg_base
+        for j in range(len(diff)):
+            if abs(diff[j]) > abs(args.tol * avg_base[j]):
+                print(f"{i}, {abs(diff[j])}, {abs(args.tol * avg_base[j])}")
+                continue
 
     save(startTime, endTime, fulldata, avg_base)
     print("DONE COLLECTING")
