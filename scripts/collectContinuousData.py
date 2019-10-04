@@ -3,6 +3,7 @@ from datetime import datetime
 import pickle
 import argparse
 import numpy as np
+import pathlib as path
 
 
 def parse_args():
@@ -113,7 +114,13 @@ def main():
         avg_base = [x / len(fulldata) for x in avg_base]
         print(f"avg base num: {avg_base}")
     else:
-        avg_base = []  # load base
+        avg_base = np.zeros(15)
+        dataroot = path.Path(args.dataroot)
+        base_pkls = dataroot.glob("base*")
+        for pkl in base_pkls:
+            cur_dict = pickle.load(pkl.open("rb"))
+            avg_base = avg_base + np.array(cur_dict["avg_base"])
+        avg_base = avg_base / len(base_pkls)
 
     save(startTime, endTime, fulldata, avg_base)
     print("DONE COLLECTING")
