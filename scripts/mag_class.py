@@ -13,6 +13,7 @@ import traceback as tb
 import pickle
 import seaborn as sns
 import pandas as pd
+from statistics import median
 from shinyutils import LazyHelpFormatter
 import pathlib as path
 from functools import partial
@@ -84,8 +85,7 @@ def processData(raw_dict):
         avg_base = avg_base + np.array(cur_dict["avg_base"])
     avg_base = avg_base / len(base_pkls)
 
-    # digits = []
-    # signals = []
+    # remove non writing signals
     all_sig_dict = {}
     for digit in range(0, 10):
         raw_data = raw_dict[digit]["data"]
@@ -96,15 +96,13 @@ def processData(raw_dict):
             diff = x - avg_base
             for j in range(len(diff)):
                 if abs(diff[j]) > abs(args.tol * avg_base[j]):
-                    # digits.append(digit)
-                    # signals.append(i)
                     cur_signals.append(i)
                     continue
         all_sig_dict[digit] = cur_signals
 
+    # remove noise
     tol = 3
     for digit, signals in all_sig_dict.items():
-        # print(f"{digit}, {len(signals)}")
         signals = list(set(signals))
         for i in range(len(signals) - 1, -1, -1):
             num = signals[i]
@@ -118,19 +116,49 @@ def processData(raw_dict):
                 and abs(num - signals[i - 1]) > tol
             ):
                 del signals[i]
-        print(f"{digit}, {len(signals)}")
-    breakpoint()
-    # assert len(digits) == len(signals)
-    # signal_dict = {"digit": digits, "signal_idx": signals}
-    # plotSignal(signal_dict)
+        signals.sort()
+        all_sig_dict[digit] = signals
+        # print(f"{digit}, {len(signals)}")e
+    # breakpoint()
 
+    all_buckets = {}
+    for digit, signals in all_sig_dict.items():
+        buckets = []
+        cur_bucket_num = 0
+        cur_bucket = []
+        old_sig = signals[0]
+        # print(f"{digit}, {len(signals)}")
+        # breakpoint()
+        for i in range(1, len(signals)):
+            sig = signals[i]
+            if (3 >= digit or digit >= 7) and abs(sig - old_sig) < 7:
+                cur_bucket.append(sig)
+            elif 3 < digit < 7 and abs(sig - old_sig) < 13:
+                cur_bucket.append(sig)
+            else:
+                buckets.append(cur_bucket)
+                cur_bucket_num += 1
+                cur_bucket = [sig]
+            old_sig = sig
+        all_buckets[digit] = buckets
+    # breakpoint()
 
-def plotSignal(signal_dict):
-    df = pd.DataFrame(signal_dict)
-    ax = sns.pointplot(x="signal_idx", y="digit", data=df)
-    breakpoint()
-    fig = ax.get_figure()
-    fig.savefig(f"{args.dataroot}signals.pdf")
+    # find appropriate time lengths per buckets(digit)
+    time_median = []
+    time_percentile = []
+    for d, s in all_buckets.items():
+        lens = np.array([(max(x) - min(x) + 1) for x in s])
+        median_len = np.median(lens)
+        time_median.append(median_len)
+        percentile_len = np.percentile(lens, 80)
+        time_percentile.append(percentile_len)
+        print(f"{d}, {median_len}, {percentile_len}")
+
+    # set time length 20 for all digits
+    time_len = 20
+    # for d, s in all_buckets.items():
+
+    # breakpoint()
 
 
 def loadData():
