@@ -57,35 +57,65 @@ def parse_args():
     data_parser.add_argument(
         "--spc", dest="spc", help="samples per class", default=50, type=int
     )
-    parser.print_help()
+    data_parser.add_argument(
+        "--tol",
+        dest="tol",
+        help="difference tolerance",
+        default=0.22,
+        type=float,
+    )
+    # parser.print_help()
     args = parser.parse_args()
     return args
+
 
 args = parse_args()
 
 
-def processData():
+def processData(raw_dict):
     """process data"""
-
-    ys = np.empty(args.spc * 10)
-    for i in range(args.spc):
-        ys[i * 10 : (i * 10) + 10] = np.arange(0, 10)
-    for i in range(10):
-        assert(sum(ys == i))
+    avg_base = np.zeros(15)
+    dataroot = path.Path(args.dataroot)
+    base_pkls = list(dataroot.glob("base*"))
+    for pkl in base_pkls:
+        cur_dict = pickle.load(pkl.open("rb"))
+        avg_base = avg_base + np.array(cur_dict["avg_base"])
+    avg_base = avg_base / len(base_pkls)
     breakpoint()
+    for i in range(0, 10):
+        raw_data = raw_dict[i]["data"]
+        breakpoint()
+        # checking for signal away from baseline
+        for i in range(len(raw_data)):
+            x = raw_data[i]
+            diff = x - avg_base
+            for j in range(len(diff)):
+                if abs(diff[j]) > abs(args.tol * avg_base[j]):
+                    print(f"{i}, {abs(diff[j])}, {abs(args.tol * avg_base[j])}")
+                    continue
 
-    f = pickle.load(open("digits_data_batch1.pkl", "rb"))
-    Xs = f["data"]
-    times = f["start_t"] - f["end_t"]
-    
-    assert len(ys) == len(Xs)
-    final_dict = {'Xs'=Xs, 'ys'=ys}
-    pickle.dump(final_dict, open("final_digits_data.pkl", "w"))
+    #     ys[i * 10 : (i * 10) + 10] = np.arange(0, 10)
+    # for i in range(10):
+    #     assert(sum(ys == i))
+
+    # f = pickle.load(open("digits_data_batch1.pkl", "rb"))
+    # Xs = f["data"]
+    # times = f["start_t"] - f["end_t"]
+
+    # assert len(ys) == len(Xs)
+    # final_dict = {'Xs'=Xs, 'ys'=ys}
+    # pickle.dump(final_dict, open("final_digits_data.pkl", "w"))
+
 
 def loadData():
     """load data"""
-    final_dict = pickle.dump(open("final_digits_data.pkl", "w"))
-    return final_dict['Xs'], final_dict['ys']  
+    raw_dict = {}
+    for i in range(0, 10):
+        raw_dict[i] = pickle.load(
+            open(f"{args.dataroot}collect_data_batch{i+1}.pkl", "rb")
+        )
+    return raw_dict
+
 
 def avg_precision(average):
     return average_precision_score(average=self.average)
@@ -128,10 +158,13 @@ def runsvm(X, y):
         verbose=1,
     )
 
+
 def main():
-    processData()
-    X, y = loadData()
-    runsvm(X, y)
+    raw_dict = loadData()
+    breakpoint()
+    processed_dict = processData(raw_dict)
+    # runsvm(X, y)
+
 
 if __name__ == "__main__":
     main()

@@ -132,7 +132,7 @@ def main():
                 print(f"{i}, {abs(diff[j])}, {abs(args.tol * avg_base[j])}")
                 continue
 
-    save(startTime, endTime, fulldata, avg_base)
+    # save(startTime, endTime, fulldata, avg_base)
     print("DONE COLLECTING")
     breakpoint()
 
