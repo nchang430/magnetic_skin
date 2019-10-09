@@ -11,6 +11,8 @@ import argparse
 import numpy as np
 import traceback as tb
 import pickle
+import seaborn as sns
+import pandas as pd
 from shinyutils import LazyHelpFormatter
 import pathlib as path
 from functools import partial
@@ -81,30 +83,54 @@ def processData(raw_dict):
         cur_dict = pickle.load(pkl.open("rb"))
         avg_base = avg_base + np.array(cur_dict["avg_base"])
     avg_base = avg_base / len(base_pkls)
-    breakpoint()
-    for i in range(0, 10):
-        raw_data = raw_dict[i]["data"]
-        breakpoint()
+
+    # digits = []
+    # signals = []
+    all_sig_dict = {}
+    for digit in range(0, 10):
+        raw_data = raw_dict[digit]["data"]
+        cur_signals = []
         # checking for signal away from baseline
         for i in range(len(raw_data)):
             x = raw_data[i]
             diff = x - avg_base
             for j in range(len(diff)):
                 if abs(diff[j]) > abs(args.tol * avg_base[j]):
-                    print(f"{i}, {abs(diff[j])}, {abs(args.tol * avg_base[j])}")
+                    # digits.append(digit)
+                    # signals.append(i)
+                    cur_signals.append(i)
                     continue
+        all_sig_dict[digit] = cur_signals
 
-    #     ys[i * 10 : (i * 10) + 10] = np.arange(0, 10)
-    # for i in range(10):
-    #     assert(sum(ys == i))
+    tol = 3
+    for digit, signals in all_sig_dict.items():
+        # print(f"{digit}, {len(signals)}")
+        signals = list(set(signals))
+        for i in range(len(signals) - 1, -1, -1):
+            num = signals[i]
+            if i == len(signals) - 1 and abs(num - signals[i - 1]) > tol:
+                del signals[i]
+            elif i == 0 and abs(num - signals[i + 1]) > tol:
+                del signals[i]
+            elif (
+                0 < i < len(signals) - 1
+                and abs(num - signals[i + 1]) > tol
+                and abs(num - signals[i - 1]) > tol
+            ):
+                del signals[i]
+        print(f"{digit}, {len(signals)}")
+    breakpoint()
+    # assert len(digits) == len(signals)
+    # signal_dict = {"digit": digits, "signal_idx": signals}
+    # plotSignal(signal_dict)
 
-    # f = pickle.load(open("digits_data_batch1.pkl", "rb"))
-    # Xs = f["data"]
-    # times = f["start_t"] - f["end_t"]
 
-    # assert len(ys) == len(Xs)
-    # final_dict = {'Xs'=Xs, 'ys'=ys}
-    # pickle.dump(final_dict, open("final_digits_data.pkl", "w"))
+def plotSignal(signal_dict):
+    df = pd.DataFrame(signal_dict)
+    ax = sns.pointplot(x="signal_idx", y="digit", data=df)
+    breakpoint()
+    fig = ax.get_figure()
+    fig.savefig(f"{args.dataroot}signals.pdf")
 
 
 def loadData():
@@ -161,7 +187,6 @@ def runsvm(X, y):
 
 def main():
     raw_dict = loadData()
-    breakpoint()
     processed_dict = processData(raw_dict)
     # runsvm(X, y)
 
