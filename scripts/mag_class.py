@@ -11,6 +11,7 @@ import argparse
 import numpy as np
 import traceback as tb
 import pickle
+import math
 import seaborn as sns
 import pandas as pd
 from statistics import median
@@ -58,7 +59,7 @@ def parse_args():
     )
 
     data_parser.add_argument(
-        "--spc", dest="spc", help="samples per class", default=50, type=int
+        "--spc", dest="spc", help="samples per class", default=30, type=int
     )
     data_parser.add_argument(
         "--tol",
@@ -140,14 +141,22 @@ def processData(raw_dict):
                 cur_bucket_num += 1
                 cur_bucket = [sig]
             old_sig = sig
+        # breakpoint()
+        # for i in range(len(buckets) - 1, -1, -1):
+        #     if len(buckets[i]) < 3:
+        #         del buckets[i]
         all_buckets[digit] = buckets
-    # breakpoint()
 
     # find appropriate time lengths per buckets(digit)
     time_median = []
     time_percentile = []
+    mid_time_dict = {}
     for d, s in all_buckets.items():
         lens = np.array([(max(x) - min(x) + 1) for x in s])
+        mid_time = np.array(
+            [math.ceil((max(x) - min(x)) / 2) + min(x) for x in s]
+        )
+        mid_time_dict[d] = mid_time
         median_len = np.median(lens)
         time_median.append(median_len)
         percentile_len = np.percentile(lens, 80)
@@ -155,13 +164,37 @@ def processData(raw_dict):
         print(f"{d}, {median_len}, {percentile_len}")
 
     # set time length 20 for all digits
-    time_len = 20
-    # for d, s in all_buckets.items():
+    half_time = 10
+    final_buckets = {}
+    final_signals = {}
+    for d, t in mid_time_dict.items():
+        signals_idx = [
+            np.concatenate(
+                (
+                    np.sort(
+                        np.arange(x - 1, x - half_time, -1)
+                    ),  # first half before anchor
+                    np.arange(x, x + half_time),  # second half after anchor
+                )
+            )
+            for x in t
+        ]
+        final_buckets[d] = signals_idx
 
-    # breakpoint()
+        raw_data = np.array(raw_dict[d]["data"])
+        sigs = [raw_data[idx].flatten() for idx in signals_idx]
+        final_signals[d] = sigs
+
+    pickle.dump(
+        final_buckets, open(f"{args.dataroot}digits_idx_final.pkl", "wb")
+    )
+
+    pickle.dump(
+        final_signals, open(f"{args.dataroot}digits_signals_final.pkl", "wb")
+    )
 
 
-def loadData():
+def loadRawData():
     """load data"""
     raw_dict = {}
     for i in range(0, 10):
@@ -169,6 +202,26 @@ def loadData():
             open(f"{args.dataroot}collect_data_batch{i+1}.pkl", "rb")
         )
     return raw_dict
+
+
+def loadData():
+    final_signals = pickle.load(
+        open(f"{args.dataroot}digits_signals_final.pkl", "rb")
+    )
+    train_X = []
+    train_y = []
+    test_X = []
+    test_y = []
+    # 80 20, 30 train, 7 test
+    for digit, signal in final_signals.items():
+        np.random.shuffle(signal)
+        train_X = train_X + signal[: args.spc]
+        train_y = train_y + ([digit] * args.spc)
+        test_X = test_X + signal[args.spc : args.spc + 7]
+        test_y = test_y + ([digit] * 7)
+    breakpoint()
+
+    return train_X, train_y, test_X, test_y
 
 
 def avg_precision(average):
@@ -214,8 +267,10 @@ def runsvm(X, y):
 
 
 def main():
-    raw_dict = loadData()
-    processed_dict = processData(raw_dict)
+    # raw_dict = loadRawData()
+    # processed_dict = processData(raw_dict)
+
+    X, y = loadData()
     # runsvm(X, y)
 
 
