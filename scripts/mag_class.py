@@ -59,7 +59,7 @@ def parse_args():
     )
 
     data_parser.add_argument(
-        "--spc", dest="spc", help="samples per class", default=30, type=int
+        "--spc", dest="spc", help="samples per class", default=37, type=int
     )
     data_parser.add_argument(
         "--tol",
@@ -188,7 +188,6 @@ def processData(raw_dict):
     pickle.dump(
         final_buckets, open(f"{args.dataroot}digits_idx_final.pkl", "wb")
     )
-
     pickle.dump(
         final_signals, open(f"{args.dataroot}digits_signals_final.pkl", "wb")
     )
@@ -208,20 +207,26 @@ def loadData():
     final_signals = pickle.load(
         open(f"{args.dataroot}digits_signals_final.pkl", "rb")
     )
-    train_X = []
-    train_y = []
-    test_X = []
-    test_y = []
+    # train_X = []
+    # train_y = []
+    # test_X = []
+    # test_y = []
+    X = []
+    y = []
     # 80 20, 30 train, 7 test
     for digit, signal in final_signals.items():
         np.random.shuffle(signal)
-        train_X = train_X + signal[: args.spc]
-        train_y = train_y + ([digit] * args.spc)
-        test_X = test_X + signal[args.spc : args.spc + 7]
-        test_y = test_y + ([digit] * 7)
-    breakpoint()
+        X = X + signal[: args.spc]
+        y = y + ([digit] * args.spc)
+        assert len(X) == len(y)
+        # train_X = train_X + signal[: args.spc]
+        # train_y = train_y + ([digit] * args.spc)
+        # test_X = test_X + signal[args.spc : args.spc + 7]
+        # test_y = test_y + ([digit] * 7)
+    # breakpoint()
 
-    return train_X, train_y, test_X, test_y
+    return X, y
+    # return train_X, train_y, test_X, test_y
 
 
 def avg_precision(average):
@@ -231,10 +236,11 @@ def avg_precision(average):
 def runsvm(X, y):
     svc = LinearSVC(dual=False, tol=1e-5)
     pipe = make_pipeline(StandardScaler(), svc)
+    breakpoint()
 
     parameters = {
         "linearsvc__penalty": ["l1", "l2"],
-        "linearsvc__C": np.logspace(-10, 10, 20),
+        "linearsvc__C": np.logspace(-10, 1, 10, 20),
     }
     model = GridSearchCV(
         pipe,
@@ -255,15 +261,15 @@ def runsvm(X, y):
         verbose=1,
     )
     breakpoint()
-    scores = cross_validate(
-        model,
-        X,
-        y,
-        scoring=avg_precision("macro"),
-        cv=KFold(5, shuffle=True),
-        n_jobs=-1,
-        verbose=1,
-    )
+    # scores = cross_validate(
+    #     model,
+    #     X,
+    #     y,
+    #     scoring=avg_precision("macro"),
+    #     cv=KFold(5, shuffle=True),
+    #     n_jobs=-1,
+    #     verbose=1,
+    # )
 
 
 def main():
@@ -271,7 +277,7 @@ def main():
     # processed_dict = processData(raw_dict)
 
     X, y = loadData()
-    # runsvm(X, y)
+    runsvm(X, y)
 
 
 if __name__ == "__main__":
