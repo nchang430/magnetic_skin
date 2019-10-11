@@ -240,7 +240,7 @@ def runsvm(X, y):
 
     parameters = {
         "linearsvc__penalty": ["l1", "l2"],
-        "linearsvc__C": np.logspace(-10, 1, 10, 20),
+        "linearsvc__C": np.logspace(-10, 10, 20),
     }
     model = GridSearchCV(
         pipe,
@@ -259,8 +259,10 @@ def runsvm(X, y):
         cv=KFold(5, shuffle=True),
         n_jobs=-1,
         verbose=1,
+        return_estimator=True,
     )
     breakpoint()
+    # scores['estimator'][0].best_estimator_
     # scores = cross_validate(
     #     model,
     #     X,
