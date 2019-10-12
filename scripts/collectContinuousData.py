@@ -139,55 +139,10 @@ def main():
                 print(f"{i}, {abs(diff[j])}, {abs(args.tol * avg_base[j])}")
                 continue
 
-    # save(startTime, endTime, fulldata, avg_base)
+    save(startTime, endTime, fulldata, avg_base)
     print("DONE COLLECTING")
     breakpoint()
 
 
 if __name__ == "__main__":
     main()
-
-    """
-    avg_base = np.array( [ -35.2282729805014,
-            -101.85376044568241,
-            -530.0596378830087,
-            -308.9774373259055,
-            284.7739554317551,
-            -1091.5754596100278,
-            -21.344707520891355,
-            -137.83245125348193,
-            -864.9162674094721,
-            -202.3215877437327,
-            -163.25055710306415,
-            -666.7459052924787,
-            -110.93732590529252,
-            -77.79108635097492,
-            -364.8731754874653,
-        ]
-    )
-
-    # checking for signal away from baseline
-    for i in range(len(fulldata)):
-        x = fulldata[i]
-        diff = x - avg_base
-        for j in range(len(diff)):
-            if abs(diff[j]) > abs(args.tol * avg_base[j]):
-                print(f"{i}, {abs(diff[j])}, {abs(args.tol * avg_base[j])}")
-                continue
-    """
-
-    """
-    #get average abs sum signal for base, remove temp, check size of signal
-    #replaced with avg vector...better 
-    avg_base = 0
-    for x in fulldata:
-        assert len(x) == 20
-        for i in range(20, 0, -4):
-            del x[i - 1]
-        assert len(x) == 15
-        abs_x = [abs(y) for y in x]
-        avg_base += sum(abs_x)
-    avg_base = avg_base / len(fulldata)
-    print(f"avg base num: {avg_base}")
-    """
-

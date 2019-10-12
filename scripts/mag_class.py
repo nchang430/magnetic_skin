@@ -119,8 +119,6 @@ def processData(raw_dict):
                 del signals[i]
         signals.sort()
         all_sig_dict[digit] = signals
-        # print(f"{digit}, {len(signals)}")e
-    # breakpoint()
 
     all_buckets = {}
     for digit, signals in all_sig_dict.items():
@@ -128,8 +126,6 @@ def processData(raw_dict):
         cur_bucket_num = 0
         cur_bucket = []
         old_sig = signals[0]
-        # print(f"{digit}, {len(signals)}")
-        # breakpoint()
         for i in range(1, len(signals)):
             sig = signals[i]
             if (3 >= digit or digit >= 7) and abs(sig - old_sig) < 7:
@@ -141,10 +137,6 @@ def processData(raw_dict):
                 cur_bucket_num += 1
                 cur_bucket = [sig]
             old_sig = sig
-        # breakpoint()
-        # for i in range(len(buckets) - 1, -1, -1):
-        #     if len(buckets[i]) < 3:
-        #         del buckets[i]
         all_buckets[digit] = buckets
 
     # find appropriate time lengths per buckets(digit)
@@ -207,26 +199,15 @@ def loadData():
     final_signals = pickle.load(
         open(f"{args.dataroot}digits_signals_final.pkl", "rb")
     )
-    # train_X = []
-    # train_y = []
-    # test_X = []
-    # test_y = []
     X = []
     y = []
-    # 80 20, 30 train, 7 test
     for digit, signal in final_signals.items():
         np.random.shuffle(signal)
         X = X + signal[: args.spc]
         y = y + ([digit] * args.spc)
         assert len(X) == len(y)
-        # train_X = train_X + signal[: args.spc]
-        # train_y = train_y + ([digit] * args.spc)
-        # test_X = test_X + signal[args.spc : args.spc + 7]
-        # test_y = test_y + ([digit] * 7)
-    # breakpoint()
 
     return X, y
-    # return train_X, train_y, test_X, test_y
 
 
 def avg_precision(average):
@@ -262,16 +243,6 @@ def runsvm(X, y):
         return_estimator=True,
     )
     breakpoint()
-    # scores['estimator'][0].best_estimator_
-    # scores = cross_validate(
-    #     model,
-    #     X,
-    #     y,
-    #     scoring=avg_precision("macro"),
-    #     cv=KFold(5, shuffle=True),
-    #     n_jobs=-1,
-    #     verbose=1,
-    # )
 
 
 def main():
