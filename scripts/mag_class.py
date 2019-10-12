@@ -1,5 +1,5 @@
 """
-sklearn_sanity.py: multiclass (1 vs all) SVMs sanity checks with sklearn
+sklearn_sanity.py: multiclass (1 vs all) SVMs for digit classification with sklearn
 author: Nadine Chang
 date: Sept 28, 2019
 project: Magnetic Skin

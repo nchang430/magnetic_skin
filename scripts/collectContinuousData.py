@@ -1,3 +1,10 @@
+"""
+collectContinuousData.py: collect digit data
+author: Nadine Chang
+date: Sept 28, 2019
+project: Magnetic Skin
+"""
+
 import serial  # pip install pyserial
 from datetime import datetime
 import pickle

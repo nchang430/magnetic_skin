@@ -1,3 +1,10 @@
+"""
+run_demo.py: digit demo script
+author: Nadine Chang
+date: Oct 12, 2019
+project: Magnetic Skin
+"""
+
 import serial  # pip install pyserial
 from datetime import datetime
 import pickle
@@ -36,7 +43,7 @@ def parse_args():
         "--tol",
         dest="tol",
         help="difference tolerance",
-        default=0.22,
+        default=0.3,
         type=float,
     )
 
@@ -83,7 +90,6 @@ def collectData(avg_base, model):
             zero_bytes = serZero.readline()
             decoded_zero_bytes = zero_bytes.decode("utf-8")
             decoded_zero_bytes = decoded_zero_bytes.strip()
-            # print("Waiting for reset")
             if decoded_zero_bytes == "Ready!":
                 break
     fulldata = []
@@ -102,7 +108,7 @@ def collectData(avg_base, model):
                     and not digit_running
                     and not abs(data[0]) == 0.15
                 ):
-                    print("Digit Detected")
+                    print("Started Writing")
                     cur_bucket = []
                     cur_bucket.append(data)
                     digit_running = True
@@ -113,16 +119,14 @@ def collectData(avg_base, model):
                     cur_bucket = np.array(cur_bucket).flatten()
                     cur_bucket = cur_bucket.reshape(1, -1)
                     try:
-                        digit = model.predict(cur_bucket)[0]
+                        digit = int(model.predict(cur_bucket)[0])
                         if digit > 0:
                             print(f"Digit: {digit}")
-                        # print(f"Digit: {model.predict(cur_bucket)[0]}")
                     except:
                         breakpoint()
                     cur_bucket = []
                     digit_running = False
                 fulldata.append(data)
-                # print(decoded_zero_bytes)
         except:
             break
 
