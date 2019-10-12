@@ -65,13 +65,14 @@ def isSignal(data, avg_base):
 
 
 def predictDigit(bucket, model):
+    print("prediting")
     bucket = np.array(bucket).flatten()
     digit = model.predict(bucket)
     return digit
 
 
 def collectData(avg_base, model):
-    serZero = serial.Serial("/dev/tty.usbmodem14302", 115200, timeout=1)
+    serZero = serial.Serial("/dev/tty.usbmodem146302", 115200, timeout=1)
     startTime = datetime.now()
     # Start up arduino and make sure sensors are working properly
     fulldata = []
@@ -82,7 +83,7 @@ def collectData(avg_base, model):
             zero_bytes = serZero.readline()
             decoded_zero_bytes = zero_bytes.decode("utf-8")
             decoded_zero_bytes = decoded_zero_bytes.strip()
-            print("Waiting for reset")
+            # print("Waiting for reset")
             if decoded_zero_bytes == "Ready!":
                 break
     fulldata = []
@@ -96,18 +97,32 @@ def collectData(avg_base, model):
                 decoded_zero_bytes = decoded_zero_bytes.strip()
                 data = np.array([float(x) for x in decoded_zero_bytes.split()])
                 data = processData(data)
-                if isSignal(data, avg_base) and not digit_running:
+                if (
+                    isSignal(data, avg_base)
+                    and not digit_running
+                    and not abs(data[0]) == 0.15
+                ):
+                    print("Digit Detected")
                     cur_bucket = []
                     cur_bucket.append(data)
                     digit_running = True
                 elif digit_running:
                     cur_bucket.append(data)
+
                 if len(cur_bucket) == 19:
-                    print(preditDigit(cur_bucket, model))
+                    cur_bucket = np.array(cur_bucket).flatten()
+                    cur_bucket = cur_bucket.reshape(1, -1)
+                    try:
+                        digit = model.predict(cur_bucket)[0]
+                        if digit > 0:
+                            print(f"Digit: {digit}")
+                        # print(f"Digit: {model.predict(cur_bucket)[0]}")
+                    except:
+                        breakpoint()
                     cur_bucket = []
                     digit_running = False
                 fulldata.append(data)
-                print(decoded_zero_bytes)
+                # print(decoded_zero_bytes)
         except:
             break
 
@@ -125,8 +140,7 @@ def main():
     avg_base = avg_base / len(base_pkls)
 
     model = pickle.load(open("best_est.joblib", "rb"))
-    breakpoint()
-    endTime, startTime, fulldata = collectData(avg_base)
+    endTime, startTime, fulldata = collectData(avg_base, model)
 
     breakpoint()
 
