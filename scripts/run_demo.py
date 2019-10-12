@@ -65,7 +65,7 @@ def isSignal(data, avg_base):
 
 
 def predictDigit(bucket, model):
-    bucket = bucket.flatten()
+    bucket = np.array(bucket).flatten()
     digit = model.predict(bucket)
     return digit
 
@@ -87,6 +87,7 @@ def collectData(avg_base, model):
                 break
     fulldata = []
     cur_bucket = []
+    digit_running = False
     while True:
         try:
             if serZero.in_waiting:
@@ -95,7 +96,7 @@ def collectData(avg_base, model):
                 decoded_zero_bytes = decoded_zero_bytes.strip()
                 data = np.array([float(x) for x in decoded_zero_bytes.split()])
                 data = processData(data)
-                if isSignal(data, avg_base) and digit_running == False:
+                if isSignal(data, avg_base) and not digit_running:
                     cur_bucket = []
                     cur_bucket.append(data)
                     digit_running = True
@@ -104,6 +105,7 @@ def collectData(avg_base, model):
                 if len(cur_bucket) == 19:
                     print(preditDigit(cur_bucket, model))
                     cur_bucket = []
+                    digit_running = False
                 fulldata.append(data)
                 print(decoded_zero_bytes)
         except:
