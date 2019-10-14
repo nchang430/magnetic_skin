@@ -21,7 +21,7 @@ from functools import partial
 from sklearn import svm
 from sklearn.model_selection import GridSearchCV, cross_validate
 from sklearn.svm import LinearSVC
-from sklearn.model_selection import KFold
+from sklearn.model_selection import StratifiedKFold
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -228,7 +228,7 @@ def runsvm(X, y):
         parameters,
         n_jobs=-1,
         iid=True,
-        cv=KFold(5, shuffle=True),
+        cv=StratifiedKFold(5, shuffle=True),
         refit=True,
         verbose=1,
     )
@@ -237,7 +237,7 @@ def runsvm(X, y):
         X,
         y,
         scoring="accuracy",
-        cv=KFold(5, shuffle=True),
+        cv=StratifiedKFold(5, shuffle=True),
         n_jobs=-1,
         verbose=1,
         return_estimator=True,
